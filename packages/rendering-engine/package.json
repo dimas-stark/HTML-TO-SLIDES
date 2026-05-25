@@ -5,7 +5,7 @@
   "types": "./src/index.ts",
   "private": true,
   "dependencies": {
-    "playwright": "^1.44.0",
+    "playwright": "1.60.0",
     "@html-to-slides/shared-types": "*"
   },
   "devDependencies": {
