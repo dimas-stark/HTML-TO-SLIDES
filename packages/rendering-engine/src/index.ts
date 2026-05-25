@@ -37,34 +37,26 @@ export class PlaywrightRenderer {
     }
   }
 
-  // ── Setup page: block external CDN requests ───────────────────
-  // Presentations use Tailwind CDN, FontAwesome, Google Fonts etc.
-  // These external requests cause `networkidle` to timeout inside Docker.
-  // We block them and use domcontentloaded + a short settle delay instead.
+  // ── Setup page: load HTML with CDN support ────────────────────
+  // Presentations use Tailwind Play CDN, FontAwesome, Google Fonts etc.
+  // Problem: `networkidle` never resolves because Tailwind Play CDN
+  //          continuously injects new styles (keeps network "active").
+  // Solution: use `load` (waits for scripts to download, not idle),
+  //           then a 4s fixed wait for Tailwind JIT to process all classes.
   private async setupPage(ctx: BrowserContext, html: string): Promise<ReturnType<BrowserContext['newPage']>> {
     const page = await ctx.newPage();
 
-    await page.route('**/*', (route) => {
-      const url = route.request().url();
-      // Allow data URIs and blob (inline images, etc.)
-      if (url.startsWith('data:') || url.startsWith('blob:')) {
-        return route.continue();
-      }
-      // Block external HTTPS requests (CDNs, analytics, fonts, etc.)
-      if (url.startsWith('https://') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
-        return route.abort();
-      }
-      return route.continue();
-    });
-
-    // Use domcontentloaded — doesn't wait for external CDN resources
+    // Use `load` waitUntil — fires after scripts download (including Tailwind CDN).
+    // Unlike `networkidle`, it doesn't wait for ALL network activity to stop.
     await page.setContent(html, {
-      waitUntil: 'domcontentloaded',
+      waitUntil: 'load',
       timeout: 60_000,
     });
 
-    // Give inline Tailwind JIT + slide JS time to process
-    await page.waitForTimeout(1500);
+    // Tailwind Play CDN runs JS to scan the DOM and inject CSS after load.
+    // We need to give it a few seconds to finish processing all classes.
+    // 4s is enough even on slow connections inside Docker.
+    await page.waitForTimeout(4000);
 
     return page;
   }
