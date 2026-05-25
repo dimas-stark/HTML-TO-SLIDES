@@ -6,6 +6,8 @@ WORKDIR /app
 # Copy root workspace files
 COPY package.json ./
 COPY turbo.json ./
+COPY tsconfig.json ./
+COPY tsconfig.base.json ./
 
 # Copy all packages the worker depends on
 COPY packages/shared-types   ./packages/shared-types

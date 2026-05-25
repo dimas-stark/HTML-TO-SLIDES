@@ -3,6 +3,8 @@ WORKDIR /app
 
 COPY package.json ./
 COPY turbo.json ./
+COPY tsconfig.json ./
+COPY tsconfig.base.json ./
 COPY packages/shared-types  ./packages/shared-types
 COPY apps/web               ./apps/web
 
