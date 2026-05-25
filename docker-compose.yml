@@ -24,6 +24,8 @@ services:
     restart: unless-stopped
     environment:
       - NEXT_PUBLIC_API_BASE=/api
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
     networks:
       - app-network
     depends_on:
