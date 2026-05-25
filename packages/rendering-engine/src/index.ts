@@ -37,6 +37,38 @@ export class PlaywrightRenderer {
     }
   }
 
+  // ── Setup page: block external CDN requests ───────────────────
+  // Presentations use Tailwind CDN, FontAwesome, Google Fonts etc.
+  // These external requests cause `networkidle` to timeout inside Docker.
+  // We block them and use domcontentloaded + a short settle delay instead.
+  private async setupPage(ctx: BrowserContext, html: string): Promise<ReturnType<BrowserContext['newPage']>> {
+    const page = await ctx.newPage();
+
+    await page.route('**/*', (route) => {
+      const url = route.request().url();
+      // Allow data URIs and blob (inline images, etc.)
+      if (url.startsWith('data:') || url.startsWith('blob:')) {
+        return route.continue();
+      }
+      // Block external HTTPS requests (CDNs, analytics, fonts, etc.)
+      if (url.startsWith('https://') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
+        return route.abort();
+      }
+      return route.continue();
+    });
+
+    // Use domcontentloaded — doesn't wait for external CDN resources
+    await page.setContent(html, {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    });
+
+    // Give inline Tailwind JIT + slide JS time to process
+    await page.waitForTimeout(1500);
+
+    return page;
+  }
+
   // ── Screenshot single slide ────────────────────────────────────
   async captureSlide(
     html: string,
@@ -45,20 +77,13 @@ export class PlaywrightRenderer {
   ): Promise<Buffer> {
     this.assertReady();
     const ctx = await this.newContext(options.highDpi ?? true);
-    const page = await ctx.newPage();
+    const page = await this.setupPage(ctx, html);
 
     try {
-      // Load HTML — allow external CDNs (Tailwind, FontAwesome, Google Fonts)
-      await page.setContent(html, {
-        waitUntil: 'networkidle',
-        timeout: 30_000,
-      });
-
-      // Activate only the target slide
+      // Activate only the target slide, hide nav controls, reset transform
       await page.evaluate((idx: number) => {
         const slides = document.querySelectorAll<HTMLElement>('.slide');
         slides.forEach((slide, i) => {
-          // Override the CSS opacity/visibility approach used in sample.html
           slide.style.cssText = `
             position: absolute !important;
             top: 0 !important; left: 0 !important;
@@ -68,7 +93,6 @@ export class PlaywrightRenderer {
             transform: scale(1) !important;
             z-index: ${i === idx ? '10' : '0'} !important;
           `;
-          // Also handle active class
           if (i === idx) {
             slide.classList.add('active');
           } else {
@@ -76,11 +100,9 @@ export class PlaywrightRenderer {
           }
         });
 
-        // Hide navigation controls — they sit on top of slide
         const controls = document.getElementById('controls');
         if (controls) controls.style.display = 'none';
 
-        // Reset deck-container transform (the JS scales it for screen fit)
         const deck = document.getElementById('deck-container');
         if (deck) {
           deck.style.transform = 'none';
@@ -89,7 +111,7 @@ export class PlaywrightRenderer {
         }
       }, slideIndex);
 
-      // Wait for fonts and animations to settle
+      // Wait for fonts to load (local fallbacks only, since CDN is blocked)
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(300);
 
@@ -132,14 +154,9 @@ export class PlaywrightRenderer {
   async capturePdf(html: string, slideCount: number): Promise<Buffer> {
     this.assertReady();
     const ctx = await this.newContext(false); // PDF doesn't need HiDPI
-    const page = await ctx.newPage();
+    const page = await this.setupPage(ctx, html);
 
     try {
-      await page.setContent(html, {
-        waitUntil: 'networkidle',
-        timeout: 30_000,
-      });
-
       // Inject print CSS: show all slides as separate pages
       await page.addStyleTag({
         content: `
