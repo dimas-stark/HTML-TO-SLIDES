@@ -1,0 +1,16 @@
+# Normalize line endings to LF for all text files
+* text=auto eol=lf
+
+# Force LF for these files
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.json  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.sql   text eol=lf
+*.css   text eol=lf
+*.md    text eol=lf
+*.html  text eol=lf
+Dockerfile text eol=lf
+nginx.conf text eol=lf

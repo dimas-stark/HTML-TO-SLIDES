@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@html-to-slides/shared-types": ["../../packages/shared-types/src"],
+      "@html-to-slides/html-parser": ["../../packages/html-parser/src"],
+      "@html-to-slides/rendering-engine": ["../../packages/rendering-engine/src"],
+      "@html-to-slides/export-engine": ["../../packages/export-engine/src"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
