@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS projects (
 CREATE TABLE IF NOT EXISTS export_jobs (
   id           TEXT PRIMARY KEY,
   project_id   TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  format       TEXT NOT NULL CHECK (format IN ('pptx', 'pdf', 'png', 'jpg')),
+  format       TEXT NOT NULL CHECK (format IN ('pptx', 'pdf', 'png', 'jpg', 'gif')),
   status       TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
   progress     INTEGER DEFAULT 0,
   file_key     TEXT,

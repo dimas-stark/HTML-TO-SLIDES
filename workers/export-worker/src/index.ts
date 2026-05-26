@@ -103,6 +103,14 @@ async function processJob(job: Job<ExportJobPayload>): Promise<void> {
       contentType = 'application/zip';
       break;
 
+    case 'gif': {
+      const recordDuration = job.data.options?.recordDuration ?? 5;
+      fileBuffer  = await engine.exportGif(htmlContent, slideCount, { recordDuration }, onProgress);
+      filename    = `slides-${projectId}-gif.zip`;
+      contentType = 'application/zip';
+      break;
+    }
+
     default:
       throw new Error(`Unknown export format: ${format}`);
   }

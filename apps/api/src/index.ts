@@ -175,7 +175,7 @@ app.delete('/projects/:id', async (req, res) => {
 app.post('/projects/:id/export', async (req, res) => {
   try {
     const { format } = req.body as { format: ExportFormat };
-    const validFormats: ExportFormat[] = ['pptx', 'pdf', 'png', 'jpg'];
+    const validFormats: ExportFormat[] = ['pptx', 'pdf', 'png', 'jpg', 'gif'];
 
     if (!validFormats.includes(format)) {
       return res.status(400).json({ error: `Invalid format. Use: ${validFormats.join(', ')}` });
@@ -190,6 +190,9 @@ app.post('/projects/:id/export', async (req, res) => {
 
     const project = rows[0];
     const jobId = uuidv4();
+
+    // GIF-specific option: how many seconds to record per slide
+    const recordDuration = (req.body as any).recordDuration ?? 5;
 
     // Insert job record
     await db.query(
@@ -207,6 +210,7 @@ app.post('/projects/:id/export', async (req, res) => {
         format,
         htmlContent: project.html_content,
         slideCount: project.slide_count,
+        options: { recordDuration },
       } as ExportJobPayload,
       { jobId }
     );
@@ -215,6 +219,36 @@ app.post('/projects/:id/export', async (req, res) => {
     res.json({ jobId, status: 'pending' });
   } catch (err: any) {
     console.error('[api] Export error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── PUT /projects/:id/html ────────────────────────────────────────
+// Saves the edited HTML back to the database (used by the text editor)
+app.put('/projects/:id/html', async (req, res) => {
+  try {
+    const { htmlContent } = req.body as { htmlContent: string };
+
+    if (!htmlContent || typeof htmlContent !== 'string') {
+      return res.status(400).json({ error: 'htmlContent is required' });
+    }
+
+    // Sanity check: must still have slides
+    if (!htmlContent.includes('class="slide"') && !htmlContent.includes("class='slide'")) {
+      return res.status(422).json({ error: 'Edited HTML must still contain slide elements' });
+    }
+
+    const { rowCount } = await db.query(
+      `UPDATE projects SET html_content = $1, updated_at = NOW() WHERE id = $2`,
+      [htmlContent, req.params.id]
+    );
+
+    if (rowCount === 0) return res.status(404).json({ error: 'Project not found' });
+
+    console.log(`[api] HTML updated for project ${req.params.id}`);
+    res.json({ updated: true });
+  } catch (err: any) {
+    console.error('[api] Update HTML error:', err);
     res.status(500).json({ error: err.message });
   }
 });

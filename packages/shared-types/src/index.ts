@@ -70,7 +70,7 @@ export interface ComputedElementStyles {
 // Project & Job types (for DB + API)
 // ─────────────────────────────────────────────────────────────────
 
-export type ExportFormat = 'pptx' | 'pdf' | 'png' | 'jpg';
+export type ExportFormat = 'pptx' | 'pdf' | 'png' | 'jpg' | 'gif';
 export type JobStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface ExportJobPayload {
@@ -85,6 +85,8 @@ export interface ExportJobPayload {
 export interface ExportOptions {
   quality?: 'normal' | 'high';
   slideRange?: [number, number];
+  // GIF-specific: how many seconds to record each slide's animation
+  recordDuration?: number;
 }
 
 export interface ExportResult {

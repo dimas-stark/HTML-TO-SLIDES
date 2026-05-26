@@ -1,18 +1,18 @@
 import PptxGenJS from 'pptxgenjs';
 import archiver from 'archiver';
 import { Readable } from 'stream';
+import { readFile, unlink } from 'fs/promises';
 import type { PlaywrightRenderer } from '@html-to-slides/rendering-engine';
 
 // ─────────────────────────────────────────────────────────────────
 // ExportEngine — Phase 1 (Image-Based)
-// All formats use Playwright screenshot as the source of truth.
-// Phase 2 will add native PPT element rendering.
+// All formats use Playwright screenshot/recording as source of truth.
 // ─────────────────────────────────────────────────────────────────
 
 export class ExportEngine {
   constructor(private renderer: PlaywrightRenderer) {}
 
-  // ── PPTX Export (Phase 1: each slide = 1 image) ────────────────
+  // ── PPTX Export (each slide = 1 image) ─────────────────────────
   async exportPptx(
     html: string,
     slideCount: number,
@@ -26,28 +26,22 @@ export class ExportEngine {
     for (let i = 0; i < slideCount; i++) {
       console.log(`[export] PPT slide ${i + 1}/${slideCount}`);
 
-      // Capture screenshot
       const imgBuf = await this.renderer.captureSlide(html, i, {
         format: 'png',
         highDpi: true,
       });
       const imgBase64 = imgBuf.toString('base64');
 
-      // Add to PPT as full-slide image
       const slide = pptx.addSlide();
       slide.addImage({
         data: `image/png;base64,${imgBase64}`,
-        x: 0,
-        y: 0,
-        w: '100%',
-        h: '100%',
+        x: 0, y: 0, w: '100%', h: '100%',
       });
 
       onProgress?.(10 + Math.round(((i + 1) / slideCount) * 75));
     }
 
     onProgress?.(90);
-
     const buf = await pptx.write({ outputType: 'nodebuffer' });
     return buf as Buffer;
   }
@@ -82,6 +76,44 @@ export class ExportEngine {
     return this.exportImages(html, slideCount, 'jpeg', onProgress);
   }
 
+  // ── GIF Export (Option A: one animated GIF per slide → ZIP) ───
+  // Each slide's CSS animations are recorded for `recordDuration` seconds.
+  // All GIFs are packaged into a single ZIP for download.
+  async exportGif(
+    html: string,
+    slideCount: number,
+    options: { recordDuration?: number } = {},
+    onProgress?: (pct: number) => void
+  ): Promise<Buffer> {
+    onProgress?.(5);
+    const recordDuration = options.recordDuration ?? 5;
+    const gifPaths: string[] = [];
+
+    for (let i = 0; i < slideCount; i++) {
+      console.log(`[export] GIF recording slide ${i + 1}/${slideCount} (${recordDuration}s animation)`);
+      const gifPath = await this.renderer.recordSlideGif(html, i, { recordDuration });
+      gifPaths.push(gifPath);
+      onProgress?.(5 + Math.round(((i + 1) / slideCount) * 88));
+    }
+
+    // Read all GIF files into buffers
+    const gifBuffers = await Promise.all(gifPaths.map(p => readFile(p)));
+
+    // Pack all GIFs into a ZIP
+    const zipBuf = await this.packZip(
+      gifBuffers.map((buf, i) => ({
+        name: `slide-${String(i + 1).padStart(2, '0')}.gif`,
+        data: buf,
+      }))
+    );
+
+    // Cleanup temp GIF files
+    await Promise.all(gifPaths.map(p => unlink(p).catch(() => {})));
+
+    onProgress?.(98);
+    return zipBuf;
+  }
+
   // ── Internal: ZIP all slide images ────────────────────────────
   private async exportImages(
     html: string,
@@ -99,7 +131,6 @@ export class ExportEngine {
       onProgress?.(5 + Math.round(((i + 1) / slideCount) * 80));
     }
 
-    // Pack into ZIP
     const ext = format === 'jpeg' ? 'jpg' : 'png';
     const zipBuf = await this.packZip(
       imageBuffers.map((buf, i) => ({

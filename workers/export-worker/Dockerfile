@@ -1,6 +1,9 @@
 # Worker Dockerfile — uses official Playwright image (Chromium pre-installed)
 FROM mcr.microsoft.com/playwright:v1.60.0-jammy
 
+# Install ffmpeg for WebM → GIF conversion (animated GIF export feature)
+RUN apt-get update && apt-get install -y ffmpeg --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Copy root workspace files
