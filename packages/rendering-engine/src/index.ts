@@ -51,7 +51,7 @@ export class PlaywrightRenderer {
   private async setupPage(ctx: BrowserContext, html: string): Promise<Page> {
     const page = await ctx.newPage();
     await page.setContent(html, {
-      waitUntil: 'load',
+      waitUntil: 'domcontentloaded',
       timeout: 60_000,
     });
     // Give CDN resources time to apply (Tailwind JIT, Google Fonts, etc.)
@@ -300,7 +300,7 @@ export class PlaywrightRenderer {
     const page = await ctx.newPage();
 
     try {
-      await page.setContent(html, { waitUntil: 'load', timeout: 60_000 });
+      await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 60_000 });
       await page.waitForTimeout(CDN_SETTLE_MS);
 
       // Activate slide → CSS animations start NOW
