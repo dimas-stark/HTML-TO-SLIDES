@@ -20,9 +20,9 @@ const CHROMIUM_ARGS = [
   '--force-device-scale-factor=2', // HiDPI for crisp output
 ];
 
-// How long to wait for Tailwind CDN to download + process all classes.
-// This phase will be trimmed/skipped in the final GIF output.
-const TAILWIND_SETTLE_MS = 5000;
+// How long to wait after 'load' for any CDN (Tailwind, Google Fonts, etc.) to settle.
+// This wait happens only ONCE per export batch, not per slide.
+const CDN_SETTLE_MS = 5000;
 
 export class PlaywrightRenderer {
   private browser: Browser | null = null;
@@ -45,22 +45,23 @@ export class PlaywrightRenderer {
     }
   }
 
-  // ── Setup page: load HTML + wait for Tailwind CDN ─────────────
-  // waitUntil: 'load' fires after scripts download (including Tailwind CDN).
-  // Unlike 'networkidle', it doesn't wait for Tailwind's continuous style injection.
-  // After 'load', we wait an additional TAILWIND_SETTLE_MS for JIT to finish.
+  // ── Setup page: load HTML + wait for external CDN ─────────────
+  // waitUntil: 'load' fires after scripts download (Tailwind, Google Fonts CDN, etc.).
+  // We then add CDN_SETTLE_MS to let any CSS injection / font rendering complete.
   private async setupPage(ctx: BrowserContext, html: string): Promise<Page> {
     const page = await ctx.newPage();
     await page.setContent(html, {
       waitUntil: 'load',
       timeout: 60_000,
     });
-    // Give Tailwind Play CDN time to scan DOM and inject all CSS classes
-    await page.waitForTimeout(TAILWIND_SETTLE_MS);
+    // Give CDN resources time to apply (Tailwind JIT, Google Fonts, etc.)
+    await page.waitForTimeout(CDN_SETTLE_MS);
     return page;
   }
 
   // ── Activate a specific slide on a page ───────────────────────
+  // Overrides inline styles to force the target slide visible,
+  // hides all navigation UI, and marks the deck container.
   private async activateSlide(page: Page, slideIndex: number): Promise<void> {
     await page.evaluate((idx: number) => {
       const slides = document.querySelectorAll<HTMLElement>('.slide');
@@ -74,6 +75,7 @@ export class PlaywrightRenderer {
           visibility: ${i === idx ? 'visible' : 'hidden'} !important;
           transform: scale(1) !important;
           z-index: ${i === idx ? '10' : '0'} !important;
+          transition: none !important;
         `;
         if (i === idx) {
           slide.classList.add('active');
@@ -83,22 +85,79 @@ export class PlaywrightRenderer {
         }
       });
 
-      // Hide UI elements
+      // Hide all common navigation UI elements
       ['controls', 'nav', 'progress-bar', 'slide-counter', 'dots'].forEach(id => {
         const el = document.getElementById(id) || document.querySelector(`.${id}`);
         if (el) (el as HTMLElement).style.display = 'none';
       });
+
+      // Neutralize the HTML's own JS navigation
+      (window as any).goToSlide = () => {};
+      (window as any).nextSlide = () => {};
+      (window as any).prevSlide = () => {};
 
       if (deckElement) {
         deckElement.classList.add('export-deck-container');
         deckElement.style.transform = 'none';
         deckElement.style.width = '1280px';
         deckElement.style.height = '720px';
+        deckElement.style.overflow = 'hidden';
       }
     }, slideIndex);
   }
 
-  // ── Screenshot single slide ────────────────────────────────────
+  // ── Capture ALL slides in a SINGLE page load ──────────────────
+  // KEY OPTIMIZATION: HTML is loaded ONCE, then we switch slides.
+  // This avoids:
+  //  - N separate CDN requests (Google Fonts, Tailwind, etc.)
+  //  - Resource leaks from repeated page creation/destruction
+  //  - The "stuck on slide N" issue caused by CDN rate-limiting
+  async captureAllSlides(
+    html: string,
+    slideCount: number,
+    options: CaptureOptions = {},
+    onProgress?: (current: number, total: number) => void
+  ): Promise<Buffer[]> {
+    this.assertReady();
+    const ctx = await this.newContext(options.highDpi ?? true);
+    const page = await this.setupPage(ctx, html);
+    const results: Buffer[] = [];
+
+    try {
+      for (let i = 0; i < slideCount; i++) {
+        console.log(`[renderer] Capturing slide ${i + 1}/${slideCount}`);
+        await this.activateSlide(page, i);
+        await page.evaluate(() => document.fonts.ready);
+        await page.waitForTimeout(200); // small settle for CSS transitions
+
+        // Screenshot the active slide element directly
+        const slideEl = await page.$('.slide.active');
+        let buf: Buffer;
+        if (slideEl) {
+          buf = await slideEl.screenshot({
+            type: options.format ?? 'png',
+            quality: options.format === 'jpeg' ? (options.quality ?? 90) : undefined,
+          }) as Buffer;
+        } else {
+          // Fallback: viewport clip
+          buf = await page.screenshot({
+            type: options.format ?? 'png',
+            clip: { x: 0, y: 0, width: 1280, height: 720 },
+          }) as Buffer;
+        }
+
+        results.push(buf);
+        onProgress?.(i + 1, slideCount);
+      }
+    } finally {
+      await page.close();
+      await ctx.close();
+    }
+
+    return results;
+  }
+
+  // ── Screenshot single slide (kept for one-off use) ────────────
   async captureSlide(
     html: string,
     slideIndex: number,
@@ -113,9 +172,8 @@ export class PlaywrightRenderer {
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(300);
 
-      // Take screenshot of the active slide element directly.
-      // This works regardless of whether the deck is #deck-container, #deck, etc.
-      const slideEl = await page.$(`.slide.active`);
+      // Screenshot the active slide element directly
+      const slideEl = await page.$('.slide.active');
       if (slideEl) {
         return await slideEl.screenshot({
           type: options.format ?? 'png',
@@ -123,7 +181,7 @@ export class PlaywrightRenderer {
         }) as Buffer;
       }
 
-      // Fallback 1: screenshot the export-deck-container (set by activateSlide)
+      // Fallback 1: export-deck-container
       const deckEl = await page.$('.export-deck-container');
       if (deckEl) {
         return await deckEl.screenshot({
@@ -143,21 +201,6 @@ export class PlaywrightRenderer {
     }
   }
 
-  // ── Capture all slides as PNG buffers ──────────────────────────
-  async captureAllSlides(
-    html: string,
-    slideCount: number,
-    options: CaptureOptions = {}
-  ): Promise<Buffer[]> {
-    const results: Buffer[] = [];
-    for (let i = 0; i < slideCount; i++) {
-      console.log(`[renderer] Capturing slide ${i + 1}/${slideCount}`);
-      const buf = await this.captureSlide(html, i, options);
-      results.push(buf);
-    }
-    return results;
-  }
-
   // ── PDF export (all slides as print pages) ─────────────────────
   async capturePdf(html: string, slideCount: number): Promise<Buffer> {
     this.assertReady();
@@ -174,6 +217,7 @@ export class PlaywrightRenderer {
           const el = document.getElementById(id) || document.querySelector(`.${id}`);
           if (el) (el as HTMLElement).style.display = 'none';
         });
+        (window as any).goToSlide = () => {};
       });
 
       await page.addStyleTag({
@@ -202,6 +246,7 @@ export class PlaywrightRenderer {
             height: 720px !important;
             page-break-after: always !important;
             overflow: hidden !important;
+            transition: none !important;
           }
           @page { size: 1280px 720px; margin: 0; }
         `,
@@ -228,26 +273,22 @@ export class PlaywrightRenderer {
   // then converts to GIF using ffmpeg (see gif-converter.ts).
   //
   // The recording flow:
-  //   T=0..5s: Tailwind CDN loads + processes (will be trimmed from GIF)
+  //   T=0..5s: CDN loads + processes (will be trimmed from GIF)
   //   T=5s:    slide activates → CSS animations BEGIN
   //   T=5..5+recordDuration: animations play (this is the GIF content)
   //   T=5+recordDuration: page closes → video is finalized
-  //
-  // Returns: path to the generated .gif file (in a temp directory)
   async recordSlideGif(
     html: string,
     slideIndex: number,
     options: GifCaptureOptions = {}
   ): Promise<string> {
     this.assertReady();
-    const recordDuration = options.recordDuration ?? 5; // seconds of animation
-    const tailwindWaitSec = TAILWIND_SETTLE_MS / 1000;
+    const recordDuration = options.recordDuration ?? 5;
+    const cdnWaitSec = CDN_SETTLE_MS / 1000;
 
-    // Create a unique temp directory for this recording
     const tmpDir = join(tmpdir(), `gif-slide-${slideIndex}-${Date.now()}`);
     await mkdir(tmpDir, { recursive: true });
 
-    // Create context with video recording enabled
     const ctx = await this.browser!.newContext({
       viewport: { width: 1280, height: 720 },
       recordVideo: {
@@ -259,9 +300,8 @@ export class PlaywrightRenderer {
     const page = await ctx.newPage();
 
     try {
-      // Load HTML — Tailwind CDN loads during this time (will be trimmed)
       await page.setContent(html, { waitUntil: 'load', timeout: 60_000 });
-      await page.waitForTimeout(TAILWIND_SETTLE_MS);
+      await page.waitForTimeout(CDN_SETTLE_MS);
 
       // Activate slide → CSS animations start NOW
       await this.activateSlide(page, slideIndex);
@@ -271,17 +311,15 @@ export class PlaywrightRenderer {
       await page.waitForTimeout(recordDuration * 1000);
 
     } finally {
-      // Closing the page finalizes the video file
       const video = page.video();
       await page.close();
       await ctx.close();
 
-      // Get the WebM path and convert to GIF
       const webmPath = await video!.path();
       const gifPath = webmPath.replace(/\.webm$/, '.gif');
 
-      console.log(`[renderer] Converting WebM → GIF (skip ${tailwindWaitSec}s loading phase)`);
-      await convertWebmToGif(webmPath, gifPath, tailwindWaitSec);
+      console.log(`[renderer] Converting WebM → GIF (skip ${cdnWaitSec}s CDN loading phase)`);
+      await convertWebmToGif(webmPath, gifPath, cdnWaitSec);
 
       return gifPath;
     }

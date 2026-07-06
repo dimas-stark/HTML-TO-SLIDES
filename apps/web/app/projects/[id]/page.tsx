@@ -77,13 +77,33 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
       try {
         const doc = iframe.contentDocument;
         if (!doc) return;
+
+        // Activate the correct slide
         const slides = doc.querySelectorAll<HTMLElement>('.slide');
         slides.forEach((el, i) => {
           if (i === activeSlide) el.classList.add('active');
           else el.classList.remove('active');
         });
-        const controls = doc.getElementById('controls');
-        if (controls) controls.style.display = 'none';
+
+        // Hide ALL navigation UI elements (covers sample.html, landofsmiles, and similar)
+        const navIds = ['controls', 'nav', 'progress-bar', 'slide-counter', 'dots'];
+        navIds.forEach(id => {
+          const el = doc.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+        // Also hide by common class names
+        const navClasses = ['.nav-btn', '.slide-counter', '.progress-bar', '.dot-nav'];
+        navClasses.forEach(sel => {
+          doc.querySelectorAll<HTMLElement>(sel).forEach(el => { el.style.display = 'none'; });
+        });
+
+        // Disable the HTML's own JS navigation to prevent it fighting our control
+        const win = iframe.contentWindow as any;
+        if (win) {
+          win.goToSlide  = () => {};
+          win.nextSlide  = () => {};
+          win.prevSlide  = () => {};
+        }
       } catch { /* cross-origin or not loaded */ }
     };
 
