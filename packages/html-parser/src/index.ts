@@ -11,7 +11,7 @@ export class HtmlSlideParser {
   parse(html: string): ParseResult {
     // Note: we do NOT run scripts — we only need DOM structure and
     // inline styles/class names for slide detection
-    const dom = new JSDOM(html, { runScripts: 'outside-only' });
+    const dom = new JSDOM(html);
     const document = dom.window.document;
 
     const slideEls = this.detectSlides(document);

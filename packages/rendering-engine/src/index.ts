@@ -1,4 +1,4 @@
-import { chromium, Browser, BrowserContext } from 'playwright';
+import { chromium, Browser, BrowserContext, Page } from 'playwright';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { mkdir } from 'fs/promises';
@@ -49,7 +49,7 @@ export class PlaywrightRenderer {
   // waitUntil: 'load' fires after scripts download (including Tailwind CDN).
   // Unlike 'networkidle', it doesn't wait for Tailwind's continuous style injection.
   // After 'load', we wait an additional TAILWIND_SETTLE_MS for JIT to finish.
-  private async setupPage(ctx: BrowserContext, html: string): Promise<ReturnType<BrowserContext['newPage']>> {
+  private async setupPage(ctx: BrowserContext, html: string): Promise<Page> {
     const page = await ctx.newPage();
     await page.setContent(html, {
       waitUntil: 'load',
@@ -61,7 +61,7 @@ export class PlaywrightRenderer {
   }
 
   // ── Activate a specific slide on a page ───────────────────────
-  private async activateSlide(page: ReturnType<BrowserContext['newPage']> extends Promise<infer T> ? T : never, slideIndex: number): Promise<void> {
+  private async activateSlide(page: Page, slideIndex: number): Promise<void> {
     await page.evaluate((idx: number) => {
       const slides = document.querySelectorAll<HTMLElement>('.slide');
       let deckElement: HTMLElement | null = null;
@@ -113,6 +113,17 @@ export class PlaywrightRenderer {
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(300);
 
+      // Take screenshot of the active slide element directly.
+      // This works regardless of whether the deck is #deck-container, #deck, etc.
+      const slideEl = await page.$(`.slide.active`);
+      if (slideEl) {
+        return await slideEl.screenshot({
+          type: options.format ?? 'png',
+          quality: options.format === 'jpeg' ? (options.quality ?? 90) : undefined,
+        }) as Buffer;
+      }
+
+      // Fallback 1: screenshot the export-deck-container (set by activateSlide)
       const deckEl = await page.$('.export-deck-container');
       if (deckEl) {
         return await deckEl.screenshot({
@@ -121,6 +132,7 @@ export class PlaywrightRenderer {
         }) as Buffer;
       }
 
+      // Fallback 2: viewport clip
       return await page.screenshot({
         type: options.format ?? 'png',
         clip: { x: 0, y: 0, width: 1280, height: 720 },
