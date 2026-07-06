@@ -48,7 +48,7 @@ export class HtmlSlideParser {
 
     // Fallback: try to find a container with many children
     const container = document.querySelector(
-      '#deck-container, .presentation, .deck, #slideshow'
+      '#deck-container, #deck, .presentation, .deck, #slideshow'
     );
     if (container) {
       return Array.from(container.children).filter(

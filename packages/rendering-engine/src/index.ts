@@ -64,6 +64,7 @@ export class PlaywrightRenderer {
   private async activateSlide(page: ReturnType<BrowserContext['newPage']> extends Promise<infer T> ? T : never, slideIndex: number): Promise<void> {
     await page.evaluate((idx: number) => {
       const slides = document.querySelectorAll<HTMLElement>('.slide');
+      let deckElement: HTMLElement | null = null;
       slides.forEach((slide, i) => {
         slide.style.cssText = `
           position: absolute !important;
@@ -74,18 +75,25 @@ export class PlaywrightRenderer {
           transform: scale(1) !important;
           z-index: ${i === idx ? '10' : '0'} !important;
         `;
-        if (i === idx) slide.classList.add('active');
-        else slide.classList.remove('active');
+        if (i === idx) {
+          slide.classList.add('active');
+          if (slide.parentElement) deckElement = slide.parentElement;
+        } else {
+          slide.classList.remove('active');
+        }
       });
 
-      const controls = document.getElementById('controls');
-      if (controls) controls.style.display = 'none';
+      // Hide UI elements
+      ['controls', 'nav', 'progress-bar', 'slide-counter', 'dots'].forEach(id => {
+        const el = document.getElementById(id) || document.querySelector(`.${id}`);
+        if (el) (el as HTMLElement).style.display = 'none';
+      });
 
-      const deck = document.getElementById('deck-container');
-      if (deck) {
-        deck.style.transform = 'none';
-        deck.style.width = '1280px';
-        deck.style.height = '720px';
+      if (deckElement) {
+        deckElement.classList.add('export-deck-container');
+        deckElement.style.transform = 'none';
+        deckElement.style.width = '1280px';
+        deckElement.style.height = '720px';
       }
     }, slideIndex);
   }
@@ -105,7 +113,7 @@ export class PlaywrightRenderer {
       await page.evaluate(() => document.fonts.ready);
       await page.waitForTimeout(300);
 
-      const deckEl = await page.$('#deck-container');
+      const deckEl = await page.$('.export-deck-container');
       if (deckEl) {
         return await deckEl.screenshot({
           type: options.format ?? 'png',
@@ -145,6 +153,17 @@ export class PlaywrightRenderer {
     const page = await this.setupPage(ctx, html);
 
     try {
+      await page.evaluate(() => {
+        const slides = document.querySelectorAll<HTMLElement>('.slide');
+        if (slides.length > 0 && slides[0].parentElement) {
+          slides[0].parentElement.classList.add('export-deck-container');
+        }
+        ['controls', 'nav', 'progress-bar', 'slide-counter', 'dots'].forEach(id => {
+          const el = document.getElementById(id) || document.querySelector(`.${id}`);
+          if (el) (el as HTMLElement).style.display = 'none';
+        });
+      });
+
       await page.addStyleTag({
         content: `
           body {
@@ -153,7 +172,7 @@ export class PlaywrightRenderer {
             display: block !important;
             margin: 0 !important;
           }
-          #deck-container {
+          .export-deck-container {
             transform: none !important;
             box-shadow: none !important;
             width: 1280px !important;
@@ -161,7 +180,6 @@ export class PlaywrightRenderer {
             overflow: visible !important;
             position: static !important;
           }
-          #controls { display: none !important; }
           .slide {
             position: relative !important;
             display: block !important;

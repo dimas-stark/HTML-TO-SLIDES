@@ -1,0 +1,1858 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kick-Off: Land of Smiles × GenGold Tech Solutions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-main: #FFFFFF;
+      --bg-alt: #F4F7F9;
+      --primary: #00A79D;
+      --primary-dark: #00877E;
+      --primary-light: rgba(0, 167, 157, 0.12);
+      --accent: #FFD100;
+      --accent-light: rgba(255, 209, 0, 0.2);
+      --text-main: #1E293B;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --shadow-sm: 0 4px 15px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 8px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      background: var(--bg-main);
+      font-family: 'Inter', sans-serif;
+      color: var(--text-main);
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    /* ── PRESENTATION SHELL ── */
+    #deck {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── SLIDE BASE ── */
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      opacity: 0;
+      transform: translateX(60px);
+      transition: opacity .55s cubic-bezier(.4, 0, .2, 1), transform .55s cubic-bezier(.4, 0, .2, 1);
+      pointer-events: none;
+      background: var(--bg-main);
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: all;
+    }
+
+    .slide.exit {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+
+    /* ── AMBIENT BG DECORATION ── */
+    .slide::before {
+      content: '';
+      position: absolute;
+      top: -150px;
+      right: -150px;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .slide::after {
+      content: '';
+      position: absolute;
+      bottom: -100px;
+      left: -100px;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── PROGRESS BAR ── */
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      transition: width .4s ease;
+      z-index: 100;
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* ── SLIDE COUNTER ── */
+    #slide-counter {
+      position: fixed;
+      bottom: 28px;
+      right: 36px;
+      font-size: 13px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      letter-spacing: .08em;
+      color: var(--text-muted);
+      z-index: 100;
+    }
+
+    #slide-counter span {
+      color: var(--primary);
+    }
+
+    /* ── NAV BUTTONS ── */
+    #nav {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      z-index: 100;
+    }
+
+    .nav-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(8px);
+      color: var(--primary);
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-btn:hover {
+      background: var(--bg-alt);
+      border-color: var(--primary);
+      transform: scale(1.08);
+    }
+
+    .nav-btn:disabled {
+      opacity: .3;
+      cursor: default;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── DOT NAV ── */
+    #dots {
+      position: fixed;
+      left: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      cursor: pointer;
+      transition: all .25s ease;
+    }
+
+    .dot.active {
+      background: var(--primary);
+      transform: scale(1.5);
+    }
+
+    /* ── GOLD RULE -> TEAL RULE ── */
+    .gold-rule {
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+
+    /* ── EYEBROW ── */
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 12px;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* ────────────────────────────────
+     SLIDE 1 — TITLE
+  ──────────────────────────────── */
+    #slide-1 {
+      justify-content: flex-start;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      padding-top: clamp(96px, 16vh, 150px);
+    }
+
+    #slide-1 .bg-lines {
+      position: absolute;
+      top: -20vh;
+      left: -20vw;
+      right: -20vw;
+      bottom: -50vh;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #slide-1 .logos-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      margin-bottom: 34px;
+      z-index: 1;
+    }
+
+    .logo-box {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 22px 18px;
+      width: 210px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .logo-img {
+      width: 120px;
+      height: 60px;
+      object-fit: contain;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .logo-name {
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-main);
+    }
+
+    .logo-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: .06em;
+    }
+
+    .logo-divider {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: var(--primary);
+      font-size: 22px;
+      z-index: 1;
+    }
+
+    .logo-divider .join-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2px solid var(--primary-light);
+      background: var(--bg-main);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-divider .join-mark::before,
+    .logo-divider .join-mark::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 2px;
+      background: var(--primary);
+    }
+
+    .logo-divider .join-mark::after {
+      transform: rotate(90deg);
+    }
+
+    .logo-divider span {
+      font-size: 11px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      letter-spacing: .1em;
+      color: var(--text-muted);
+    }
+
+    #slide-1 h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(32px, 4.2vw, 58px);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--text-main);
+      max-width: 800px;
+      margin-bottom: 24px;
+      z-index: 1;
+    }
+
+    #slide-1 h1 em {
+      font-style: normal;
+      color: var(--primary);
+      position: relative;
+      display: inline-block;
+    }
+
+    #slide-1 h1 em::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      left: 0;
+      right: 0;
+      height: 12px;
+      background: var(--accent-light);
+      z-index: -1;
+    }
+
+    #slide-1 .subtitle {
+      font-size: clamp(14px, 1.6vw, 18px);
+      font-weight: 400;
+      color: var(--text-muted);
+      max-width: 640px;
+      line-height: 1.7;
+      margin-bottom: 40px;
+      z-index: 1;
+    }
+
+    #slide-1 .meta-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 10px 24px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-main);
+      letter-spacing: .04em;
+      z-index: 1;
+      box-shadow: var(--shadow-sm);
+    }
+
+    #slide-1 .meta-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* ────────────────────────────────
+     SLIDE 2 — AGENDA
+  ──────────────────────────────── */
+    .slide-inner {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 52px 80px;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      justify-content: center;
+      z-index: 1;
+    }
+
+    .slide-header {
+      margin-bottom: 36px;
+    }
+
+    .slide-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(30px, 3.5vw, 46px);
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+
+    .slide-header h2 em {
+      font-style: normal;
+      color: var(--primary);
+    }
+
+    .agenda-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .agenda-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 26px 28px;
+      position: relative;
+      overflow: hidden;
+      transition: all .3s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .agenda-card:hover {
+      border-color: var(--primary-light);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-3px);
+    }
+
+    .agenda-card .card-num {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: .15em;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+
+    .agenda-card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 10px;
+    }
+
+    .agenda-card p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .agenda-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--primary);
+      border-radius: 16px 0 0 16px;
+    }
+
+    .agenda-card:nth-child(even)::before {
+      background: var(--accent);
+    }
+
+    .quote-block {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      border-radius: 12px;
+      padding: 22px 30px;
+      font-size: 15px;
+      font-style: italic;
+      color: var(--text-main);
+      line-height: 1.7;
+      position: relative;
+    }
+
+    .quote-block::before {
+      content: '"';
+      position: absolute;
+      top: -10px;
+      left: 24px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 64px;
+      color: var(--primary-light);
+      line-height: 1;
+      z-index: 0;
+    }
+
+    /* ────────────────────────────────
+     SLIDE 3 — SCOPE
+  ──────────────────────────────── */
+    .scope-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    .scope-phase {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 30px;
+      position: relative;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .phase-badge {
+      display: inline-block;
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
+
+    .phase-badge.p1 {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+    }
+
+    .phase-badge.p2 {
+      background: var(--accent-light);
+      color: #B29200;
+    }
+
+    .scope-phase h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .scope-phase .phase-type {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      font-weight: 500;
+    }
+
+    .scope-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .scope-item .si-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      font-weight: bold;
+    }
+
+    .p1 .si-dot {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .p2 .si-dot {
+      background: var(--accent-light);
+      color: #B29200;
+    }
+
+    .scope-item p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .scope-item strong {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    /* ────────────────────────────────
+     SLIDE 4 — SITEMAP
+  ──────────────────────────────── */
+    .sitemap-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .sitemap-root {
+      background: var(--primary);
+      color: #FFFFFF;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      letter-spacing: .04em;
+      padding: 16px 48px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0, 167, 157, 0.2);
+    }
+
+    .sitemap-pages {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      width: 100%;
+      position: relative;
+      padding-top: 24px;
+    }
+
+    .sitemap-pages::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 12.5%;
+      right: 12.5%;
+      height: 3px;
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .sitemap-pages::after {
+      content: '';
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      height: 24px;
+      background: var(--border);
+    }
+
+    .sitemap-page {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 20px;
+      text-align: center;
+      position: relative;
+      transition: all .3s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .sitemap-page:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-5px);
+    }
+
+    .sitemap-page::before {
+      content: '';
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      height: 24px;
+      background: var(--border);
+    }
+
+    .icon-mark {
+      width: 36px;
+      height: 36px;
+      margin: 0 auto 14px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      position: relative;
+    }
+
+    /* Icon styling for light theme */
+    .icon-mark.veneer::before {
+      content: '';
+      position: absolute;
+      inset: 10px 11px 11px;
+      transform: rotate(45deg);
+      border: 2.5px solid var(--primary);
+    }
+
+    .icon-mark.smile::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      top: 14px;
+      height: 10px;
+      border-bottom: 2.5px solid var(--primary);
+      border-radius: 0 0 20px 20px;
+    }
+
+    .icon-mark.whitening::before,
+    .icon-mark.whitening::after {
+      content: '';
+      position: absolute;
+      background: var(--primary);
+      left: 17px;
+      top: 8px;
+      width: 2.5px;
+      height: 20px;
+      border-radius: 2px;
+    }
+
+    .icon-mark.whitening::after {
+      transform: rotate(90deg);
+    }
+
+    .icon-mark.article::before {
+      content: '';
+      position: absolute;
+      left: 11px;
+      top: 10px;
+      width: 14px;
+      height: 16px;
+      border: 2.5px solid var(--primary);
+      border-top-width: 5px;
+      border-radius: 3px;
+    }
+
+    .sitemap-page .sp-slug {
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      color: var(--accent);
+      margin-bottom: 8px;
+      color: #D4A000;
+      /* Darker yellow for contrast */
+    }
+
+    .sitemap-page .sp-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .sitemap-page .sp-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .sitemap-quote {
+      background: var(--primary-light);
+      border: 1px solid rgba(0, 167, 157, 0.2);
+      border-radius: 12px;
+      padding: 18px 24px;
+      font-size: 14px;
+      font-style: italic;
+      color: var(--primary-dark);
+      line-height: 1.6;
+      text-align: center;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    /* ────────────────────────────────
+     SLIDE 5 — STANDARDS
+  ──────────────────────────────── */
+    .standards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+
+    .standards-section {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 30px 28px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .standards-section h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .standards-section h3::after {
+      content: '';
+      flex: 1;
+      height: 2px;
+      background: var(--bg-alt);
+      border-radius: 2px;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .check-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #FFF;
+      font-size: 12px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+      box-shadow: 0 4px 10px rgba(0, 167, 157, 0.2);
+    }
+
+    .check-item .ci-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 5px;
+    }
+
+    .check-item .ci-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .tracking-highlight {
+      background: var(--accent-light);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-top: 24px;
+    }
+
+    .tracking-highlight p {
+      font-size: 14px;
+      color: #856D00;
+      line-height: 1.6;
+    }
+
+    .tracking-highlight strong {
+      color: #5C4B00;
+      font-weight: 700;
+    }
+
+    /* ────────────────────────────────
+     SLIDE 6 — WORKFLOW
+  ──────────────────────────────── */
+    .workflow-flow {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin-bottom: 36px;
+    }
+
+    .wf-step {
+      flex: 1;
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+      text-align: center;
+      position: relative;
+      box-shadow: var(--shadow-sm);
+      z-index: 2;
+    }
+
+    .wf-step+.wf-step {
+      border-left: none;
+      border-radius: 0 16px 16px 0;
+      margin-left: -1px;
+      z-index: 1;
+    }
+
+    .wf-step:first-child {
+      border-radius: 16px 0 0 16px;
+      z-index: 3;
+    }
+
+    .wf-step:nth-child(3) {
+      border-color: var(--primary-light);
+      background: var(--primary-light);
+    }
+
+    .wf-icon {
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 14px;
+      border-radius: 12px;
+      background: var(--primary);
+      position: relative;
+      box-shadow: 0 6px 15px rgba(0, 167, 157, 0.2);
+    }
+
+    .wf-icon.build::before,
+    .wf-icon.review::before,
+    .wf-icon.live::before {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border: 2.5px solid #FFF;
+    }
+
+    .wf-icon.build::before {
+      border-radius: 4px;
+    }
+
+    .wf-icon.review::before {
+      border-radius: 50%;
+    }
+
+    .wf-icon.review::after {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 2.5px;
+      right: 9px;
+      bottom: 10px;
+      background: #FFF;
+      transform: rotate(45deg);
+    }
+
+    .wf-icon.live {
+      background: var(--accent);
+      box-shadow: 0 6px 15px rgba(255, 209, 0, 0.3);
+    }
+
+    .wf-icon.live::before {
+      border: 0;
+      width: 18px;
+      height: 10px;
+      left: 13px;
+      top: 14px;
+      inset: auto;
+      border-left: 3px solid #5C4B00;
+      border-bottom: 3px solid #5C4B00;
+      transform: rotate(-45deg);
+    }
+
+    .wf-label {
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .wf-label.teal {
+      color: var(--primary-dark);
+    }
+
+    .wf-step h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .wf-step p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .wf-step p strong {
+      color: var(--text-main);
+    }
+
+    .wf-arrow {
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      color: var(--border);
+      font-size: 24px;
+      flex-shrink: 0;
+      font-weight: bold;
+    }
+
+    .workflow-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    .wd-card {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 22px;
+    }
+
+    .wd-card .wdc-label {
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .label-icon {
+      width: 20px;
+      height: 20px;
+      border: 1.5px solid var(--primary);
+      border-radius: 5px;
+      display: inline-block;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .label-icon.mail::before {
+      content: '';
+      position: absolute;
+      inset: 5px 4px;
+      border-top: 1.5px solid var(--primary);
+      transform: skewY(-25deg);
+    }
+
+    .label-icon.link::before {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border: 1.5px solid var(--primary);
+      border-radius: 10px;
+    }
+
+    .label-icon.user::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 4px;
+      width: 5px;
+      height: 5px;
+      border: 1.5px solid var(--primary);
+      border-radius: 50%;
+    }
+
+    .label-icon.user::after {
+      content: '';
+      position: absolute;
+      left: 3px;
+      bottom: 3px;
+      width: 11px;
+      height: 6px;
+      border: 1.5px solid var(--primary);
+      border-radius: 10px 10px 3px 3px;
+    }
+
+    .wd-card p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .wd-card strong {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    /* ────────────────────────────────
+     SLIDE 7 — NEXT STEPS
+  ──────────────────────────────── */
+    .nextsteps-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      grid-template-rows: auto auto;
+    }
+
+    .ns-section h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--text-main);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .ns-section h3::after {
+      content: '';
+      flex: 1;
+      height: 2px;
+      background: var(--bg-alt);
+      border-radius: 2px;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .cl-box {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 2px solid var(--border);
+      background: var(--bg-alt);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .checklist-item .clt {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .checklist-item .cld {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 18px;
+      position: relative;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: 13px;
+      top: 28px;
+      width: 2px;
+      height: calc(100% - 6px);
+      background: var(--border);
+    }
+
+    .timeline-item:last-child::before {
+      display: none;
+    }
+
+    .tl-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 2px solid var(--primary);
+      flex-shrink: 0;
+      margin-top: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      color: var(--primary);
+      font-weight: 800;
+      box-shadow: 0 4px 10px rgba(0, 167, 157, 0.15);
+      z-index: 1;
+    }
+
+    .tl-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+
+    .tl-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .tl-desc em {
+      color: var(--text-main);
+    }
+
+    .qa-banner {
+      grid-column: 1 / -1;
+      background: var(--primary);
+      border-radius: 16px;
+      padding: 28px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-top: 12px;
+      box-shadow: 0 10px 30px rgba(0, 167, 157, 0.2);
+    }
+
+    .qa-banner .qa-left h3 {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 24px;
+      color: #FFFFFF;
+      margin-bottom: 8px;
+    }
+
+    .qa-banner .qa-left p {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 16px;
+    }
+
+    .qa-banner .qa-badge {
+      background: var(--accent);
+      color: #5C4B00;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 15px;
+      padding: 14px 32px;
+      border-radius: 100px;
+      white-space: nowrap;
+      letter-spacing: .06em;
+      flex-shrink: 0;
+      box-shadow: 0 6px 15px rgba(255, 209, 0, 0.3);
+    }
+
+    .contact-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .contact-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary-dark);
+      text-decoration: none;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: #FFFFFF;
+      border-radius: 100px;
+      padding: 8px 16px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .contact-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    /* ── ANIMATIONS ── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .slide.active .fade-up {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .delay-1 {
+      transition-delay: 0.1s;
+    }
+
+    .delay-2 {
+      transition-delay: 0.2s;
+    }
+
+    .delay-3 {
+      transition-delay: 0.3s;
+    }
+
+    .delay-4 {
+      transition-delay: 0.4s;
+    }
+
+    .delay-5 {
+      transition-delay: 0.5s;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="progress-bar"></div>
+
+  <div id="dots"></div>
+
+  <div id="deck">
+
+    <!-- ══════════════════════════════════════
+       SLIDE 1 — TITLE
+  ══════════════════════════════════════ -->
+    <section class="slide active" id="slide-1">
+      <div class="bg-lines"></div>
+
+      <div class="logos-row fade-up">
+        <div class="logo-box">
+          <img class="logo-img" src="assets/gengold-logo-placeholder.png" alt="GenGold Tech logo placeholder">
+          <div class="logo-name">GenGold Tech</div>
+          <div class="logo-sub">Solutions</div>
+        </div>
+        <div class="logo-divider">
+          <div class="join-mark" aria-hidden="true"></div>
+          <span>Partnership</span>
+        </div>
+        <div class="logo-box">
+          <img class="logo-img" src="assets/landofsmiles-logo-placeholder.png" alt="Land of Smiles logo placeholder">
+          <div class="logo-name">Land of Smiles</div>
+          <div class="logo-sub">PT Smile Bright White</div>
+        </div>
+      </div>
+
+      <h1 class="fade-up delay-1">Project Kick-Off:<br><em>Web Restructuring</em><br>& SEO Integration</h1>
+      <p class="subtitle fade-up delay-2">Transforming Digital Presence & Accelerating Organic Growth<br>for Land of
+        Smiles Indonesia</p>
+      <div class="meta-tag fade-up delay-3">
+        <div class="meta-dot"></div>
+        June 2026 &nbsp;|&nbsp; Prepared by GenGold Tech Solutions
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+       SLIDE 2 — AGENDA
+  ══════════════════════════════════════ -->
+    <section class="slide" id="slide-2">
+      <div class="slide-inner">
+        <div class="slide-header fade-up">
+          <div class="eyebrow">Slide 02</div>
+          <div class="gold-rule"></div>
+          <h2>Agenda & <em>Objectives</em></h2>
+          <p style="font-size:14px;color:var(--muted);margin-top:8px;">Tujuan Pertemuan Hari Ini</p>
+        </div>
+
+        <div class="agenda-grid">
+          <div class="agenda-card fade-up delay-1">
+            <div class="card-num">OBJECTIVE 01</div>
+            <h3>Sitemap Alignment</h3>
+            <p>Menyelaraskan visi struktur website baru — memastikan tim Gengold dan Landofsmiles memiliki pemahaman
+              yang sama
+              terhadap arsitektur halaman yang diusulkan.</p>
+          </div>
+          <div class="agenda-card fade-up delay-2">
+            <div class="card-num">OBJECTIVE 02</div>
+            <h3>Quality & Tracking Standards</h3>
+            <p>Memastikan standar kualitas konten & setup tracking (GA4, GTM, GSC) sesuai ekspektasi manajemen sebelum
+              operasional dimulai.</p>
+          </div>
+          <div class="agenda-card fade-up delay-3">
+            <div class="card-num">OBJECTIVE 03</div>
+            <h3>Approval Flow</h3>
+            <p>Menetapkan alur komunikasi dan penandatanganan hasil kerja — siapa yang menjadi PIC dan bagaimana proses
+              approval dari staging hingga live.</p>
+          </div>
+          <div class="agenda-card fade-up delay-4">
+            <div class="card-num">OBJECTIVE 04</div>
+            <h3>Next Steps</h3>
+            <p>Mengidentifikasi kebutuhan data & akses teknis yang dibutuhkan, serta menyepakati target waktu
+              pengumpulan onboarding checklist.</p>
+          </div>
+        </div>
+
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+       SLIDE 3 — SCOPE
+  ══════════════════════════════════════ -->
+    <section class="slide" id="slide-3">
+      <div class="slide-inner">
+        <div class="slide-header fade-up">
+          <div class="eyebrow">Slide 03</div>
+          <div class="gold-rule"></div>
+          <h2>Project <em>Scope</em> Overview</h2>
+          <p style="font-size:14px;color:var(--muted);margin-top:8px;">Cakupan Proyek dalam Dua Fase</p>
+        </div>
+
+        <div class="scope-columns">
+          <div class="scope-phase fade-up delay-1">
+            <div class="phase-badge p1">Phase 1</div>
+            <h3>Architecture Enhancement</h3>
+            <div class="phase-type">One-Time Setup · Foundation Work</div>
+
+            <div class="scope-item">
+              <div class="si-dot">✦</div>
+              <p><strong style="color:var(--text-main)">Restrukturisasi halaman</strong> — transformasi dari One-Pager
+                menjadi 4 halaman spesifik yang masing-masing dioptimasi untuk layanan utama.</p>
+            </div>
+            <div class="scope-item">
+              <div class="si-dot">✦</div>
+              <p><strong style="color:var(--text-main)">Headless CMS</strong> — integrasi sistem manajemen konten
+                mandiri agar tim Land of Smiles dapat mempublikasi artikel tanpa bergantung developer.</p>
+            </div>
+            <div class="scope-item">
+              <div class="si-dot">✦</div>
+              <p><strong style="color:var(--text-main)">Analytics Infrastructure</strong> — setup GA4, Google Tag
+                Manager, dan Google Search Console secara lengkap dan tervalidasi.</p>
+            </div>
+            <div class="scope-item">
+              <div class="si-dot">✦</div>
+              <p><strong style="color:var(--text-main)">30-Day Free Warranty</strong> — garansi perbaikan bug dan
+                penyesuaian fungsionalitas gratis setelah website <em>live</em>.</p>
+            </div>
+          </div>
+
+          <div class="scope-phase phase-2 fade-up delay-2">
+            <div class="phase-badge p2">Phase 2</div>
+            <h3>SEO Growth & Maintenance</h3>
+            <div class="phase-type">3-Month Retainer · Ongoing</div>
+
+            <div class="scope-item">
+              <div class="si-dot">✦</div>
+              <p><strong style="color:var(--text-main)">Server Monitoring & Backup</strong> — pemantauan uptime server
+                bulanan dan backup berkala untuk ketersediaan layanan 24/7.</p>
+            </div>
+            <div class="scope-item">
+              <div class="si-dot">✦</div>
+              <p><strong style="color:var(--text-main)">2 Artikel Medis/Bulan</strong> — konten spesialis estetika gigi
+                yang sepenuhnya dioptimasi SEO dengan target kata kunci high-intent Jakarta.</p>
+            </div>
+            <div class="scope-item">
+              <div class="si-dot">✦</div>
+              <p><strong style="color:var(--text-main)">Laporan Performa Bulanan</strong> — monitoring trafik organik,
+                indeksasi Google, dan konversi klik WhatsApp setiap bulan.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+       SLIDE 4 — SITEMAP
+  ══════════════════════════════════════ -->
+    <section class="slide" id="slide-4">
+      <div class="slide-inner">
+        <div class="slide-header fade-up">
+          <div class="eyebrow">Slide 04</div>
+          <div class="gold-rule"></div>
+          <h2>Proposed Website <em>Structure</em></h2>
+          <p style="font-size:14px;color:var(--muted);margin-top:8px;">Sitemap 4 Halaman — Arsitektur Baru</p>
+        </div>
+
+        <div class="sitemap-wrapper">
+          <div class="sitemap-root fade-up delay-1"><span class="root-icon" aria-hidden="true"></span>landofsmiles.co.id
+            — Homepage</div>
+
+          <div class="sitemap-pages fade-up delay-2">
+            <div class="sitemap-page">
+              <div class="icon-mark veneer" aria-hidden="true"></div>
+              <div class="sp-slug">/veneers</div>
+              <div class="sp-name">Dental Veneers</div>
+              <div class="sp-desc">Porcelain & Composite Veneers — layanan unggulan dengan teknologi 3D scanning</div>
+            </div>
+            <div class="sitemap-page">
+              <div class="icon-mark smile" aria-hidden="true"></div>
+              <div class="sp-slug">/custom-smiles</div>
+              <div class="sp-name">Custom Smiles</div>
+              <div class="sp-desc">Smile Makeover personal — solusi komprehensif untuk transformasi senyum</div>
+            </div>
+            <div class="sitemap-page">
+              <div class="icon-mark whitening" aria-hidden="true"></div>
+              <div class="sp-slug">/teeth-whitening</div>
+              <div class="sp-name">Teeth Whitening</div>
+              <div class="sp-desc">Pemutihan gigi estetika profesional — tanpa ngilu, hasil optimal beberapa shade</div>
+            </div>
+            <div class="sitemap-page">
+              <div class="icon-mark article" aria-hidden="true"></div>
+              <div class="sp-slug">/articles</div>
+              <div class="sp-name">Article Hub</div>
+              <div class="sp-desc">Blog index edukasi medis estetika — konten SEO teroptimasi berkala</div>
+            </div>
+          </div>
+
+          <div class="sitemap-quote fade-up delay-3">
+            "Pemisahan halaman ini krusial agar Google tahu persis fokus layanan kita, sekaligus meningkatkan konversi
+            pasien di Jakarta."
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+       SLIDE 5 — STANDARDS
+  ══════════════════════════════════════ -->
+    <section class="slide" id="slide-5">
+      <div class="slide-inner">
+        <div class="slide-header fade-up">
+          <div class="eyebrow">Slide 05</div>
+          <div class="gold-rule"></div>
+          <h2>Premium Content & <em>Tracking Standards</em></h2>
+          <p style="font-size:14px;color:var(--muted);margin-top:8px;">Standar Kualitas yang Diakomodasi</p>
+        </div>
+
+        <div class="standards-grid">
+          <div class="standards-section fade-up delay-1">
+            <h3>SEO Content Specification</h3>
+
+            <div class="check-item">
+              <div class="check-icon">✓</div>
+              <div>
+                <div class="ci-title">High-Intent Local Keywords</div>
+                <div class="ci-desc">Target kata kunci lokal Jakarta dengan intensitas tinggi — calon pasien yang siap
+                  booking, bukan sekadar browsing.</div>
+              </div>
+            </div>
+            <div class="check-item">
+              <div class="check-icon">✓</div>
+              <div>
+                <div class="ci-title">On-Page SEO Optimization</div>
+                <div class="ci-desc">Setiap halaman & artikel dioptimasi Meta Title, Meta Description, dan URL slug yang
+                  SEO-friendly dan deskriptif.</div>
+              </div>
+            </div>
+            <div class="check-item">
+              <div class="check-icon">✓</div>
+              <div>
+                <div class="ci-title">Structured Article Format</div>
+                <div class="ci-desc">Setiap artikel dilengkapi seksi FAQ dan Internal Linking menuju halaman layanan
+                  yang relevan untuk meningkatkan dwell time.</div>
+              </div>
+            </div>
+            <div class="check-item">
+              <div class="check-icon">✓</div>
+              <div>
+                <div class="ci-title">FAQ Schema Markup (JSON-LD)</div>
+                <div class="ci-desc">Implementasi otomatis structured data untuk memaksimalkan peluang rich results di
+                  Google Search.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="standards-section fade-up delay-2">
+            <h3>Conversion Tracking</h3>
+
+            <div class="check-item">
+              <div class="check-icon">✓</div>
+              <div>
+                <div class="ci-title">WhatsApp Click Tracking</div>
+                <div class="ci-desc">Setiap klik tombol WhatsApp dilacak via Google Tag Manager — mengukur berapa banyak
+                  pengunjung yang benar-benar menghubungi klinik.</div>
+              </div>
+            </div>
+            <div class="check-item">
+              <div class="check-icon">✓</div>
+              <div>
+                <div class="ci-title">Form Enquiry Tracking</div>
+                <div class="ci-desc">Event submission form appointment direkam sebagai konversi di GA4 untuk analisis
+                  ROI yang terukur dan akuntabel.</div>
+              </div>
+            </div>
+
+            <div class="tracking-highlight">
+              <p>Semua data tracking akan tersedia dalam <strong>laporan bulanan</strong> yang komprehensif.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+       SLIDE 6 — WORKFLOW
+  ══════════════════════════════════════ -->
+    <section class="slide" id="slide-6">
+      <div class="slide-inner">
+        <div class="slide-header fade-up">
+          <div class="eyebrow">Slide 06</div>
+          <div class="gold-rule"></div>
+          <h2>Operational Workflow & <em>Approval Flow</em></h2>
+          <p style="font-size:14px;color:var(--muted);margin-top:8px;">Alur Kerja dari Development hingga Live</p>
+        </div>
+
+        <div class="workflow-flow fade-up delay-1">
+          <div class="wf-step">
+            <div class="wf-icon build" aria-hidden="true"></div>
+            <div class="wf-label">Step 01</div>
+            <h3>Development</h3>
+            <p>Tim Ops GenGold mengerjakan perubahan kode & konten. Koordinasi via <strong
+                style="color:var(--text-main)">ops@gengoldtech.com</strong></p>
+          </div>
+          <div class="wf-arrow">→</div>
+          <div class="wf-step">
+            <div class="wf-icon review" aria-hidden="true"></div>
+            <div class="wf-label">Step 02</div>
+            <h3>Staging Review</h3>
+            <p>Semua perubahan di-deploy ke <strong style="color:var(--text-main)">Staging Link</strong> privat. Draft
+              artikel dikirim sebagai dokumen QC tertulis.</p>
+          </div>
+          <div class="wf-arrow">→</div>
+          <div class="wf-step">
+            <div class="wf-icon live" aria-hidden="true"></div>
+            <div class="wf-label teal">Step 03</div>
+            <h3>Approval & Live</h3>
+            <p>PIC dari PT Smile Bright White memberikan persetujuan final. Setelah confirmed → deploy ke <strong
+                style="color:#4AC4DC">production / live</strong>.</p>
+          </div>
+        </div>
+
+        <div class="workflow-details fade-up delay-2">
+          <div class="wd-card">
+            <div class="wdc-label"><span class="label-icon mail" aria-hidden="true"></span>Handover Channel</div>
+            <p>Proses harian dipimpin Tim Operasional melalui <strong>ops@gengoldtech.com</strong>. Untuk eskalasi,
+              langsung ke account manager GenGold.</p>
+          </div>
+          <div class="wd-card">
+            <div class="wdc-label"><span class="label-icon link" aria-hidden="true"></span>Staging Environment</div>
+            <p>Link staging bersifat <strong>privat & password-protected</strong>. Dikirim khusus ke PIC yang ditunjuk
+              untuk review sebelum go-live.</p>
+          </div>
+          <div class="wd-card">
+            <div class="wdc-label"><span class="label-icon user" aria-hidden="true"></span>PIC Confirmation</div>
+            <p>Perlu ditetapkan hari ini: <strong>siapa perwakilan PT Smile Bright White</strong> yang berwenang
+              memberikan final approval setiap deliverable.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+       SLIDE 7 — NEXT STEPS
+  ══════════════════════════════════════ -->
+    <section class="slide" id="slide-7">
+      <div class="slide-inner" style="padding-bottom:40px;">
+        <div class="slide-header fade-up">
+          <div class="eyebrow">Slide 07</div>
+          <div class="gold-rule"></div>
+          <h2>Prerequisites & <em>Next Steps</em></h2>
+          <p style="font-size:14px;color:var(--muted);margin-top:8px;">Langkah Selanjutnya — Onboarding Checklist</p>
+        </div>
+
+        <div class="nextsteps-grid">
+          <div class="ns-section fade-up delay-1">
+            <h3>Kebutuhan Data & Akses</h3>
+
+            <div class="checklist-item">
+              <div class="cl-box"></div>
+              <div>
+                <div class="clt">Akun Google Bersama</div>
+                <div class="cld">Akses GA4, Google Tag Manager (GTM), dan Google Search Console (GSC)</div>
+              </div>
+            </div>
+            <div class="checklist-item">
+              <div class="cl-box"></div>
+              <div>
+                <div class="clt">Akses Hosting & Infrastruktur</div>
+                <div class="cld">Credentials Vercel / AWS dan akses Domain Registrar (Namecheap / GoDaddy)</div>
+              </div>
+            </div>
+            <div class="checklist-item">
+              <div class="cl-box"></div>
+              <div>
+                <div class="clt">Logo Resolusi Tinggi</div>
+                <div class="cld">Format PNG/SVG transparan + kode warna resmi (HEX codes)</div>
+              </div>
+            </div>
+            <div class="checklist-item">
+              <div class="cl-box"></div>
+              <div>
+                <div class="clt">Foto Klinik & Before/After</div>
+                <div class="cld">Foto interior klinik Jakarta beresolusi tinggi & dokumentasi hasil perawatan pasien
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ns-section fade-up delay-2">
+            <h3>Timeline 21 Hari (Phase 1)</h3>
+
+            <div class="timeline-item">
+              <div class="tl-dot">1</div>
+              <div>
+                <div class="tl-title">Hari 1-3: Akses, Aset & Audit Awal</div>
+                <div class="tl-desc">Development sudah dimulai sejak kickoff ini; akses dan aset dilengkapi paralel oleh
+                  PIC.</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="tl-dot">2</div>
+              <div>
+                <div class="tl-title">Hari 4-12: Development & Integrasi Konten</div>
+                <div class="tl-desc">Restrukturisasi halaman, CMS, tracking, dan fondasi SEO dikerjakan oleh Tim Ops.
+                </div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="tl-dot">3</div>
+              <div>
+                <div class="tl-title">Hari 13-18: Staging Review & Revisi</div>
+                <div class="tl-desc">Staging link dikirim untuk review, QC konten, dan final adjustment sebelum live.
+                </div>
+              </div>
+            </div>
+            <div class="timeline-item" style="margin-bottom:0;">
+              <div class="tl-dot" style="background:rgba(74,196,220,0.15);border-color:#4AC4DC;color:#4AC4DC;">4</div>
+              <div>
+                <div class="tl-title" style="color:#4AC4DC;">Hari 19-21: Final Approval & Go Live</div>
+                <div class="tl-desc">Total durasi 21 hari kalender untuk eksekusi Phase 1, ditutup dengan approval PIC.
+                  <br><em style="color:#C9A84C; font-size:11px;">*Phase 2 (Retainer) akan segera dimulai pasca-Go
+                    Live.</em>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="qa-banner fade-up delay-3">
+            <div class="qa-left">
+              <h3>Q&A Session</h3>
+              <p>Ada pertanyaan, klarifikasi, atau hal yang ingin disesuaikan? Mari kita diskusikan sekarang.</p>
+              <div class="contact-list">
+                <a class="contact-pill" href="https://gengoldtech.com/" target="_blank" rel="noopener"><span
+                    class="contact-dot"></span>gengoldtech.com</a>
+                <a class="contact-pill" href="mailto:ops@gengoldtech.com"><span
+                    class="contact-dot"></span>ops@gengoldtech.com</a>
+                <a class="contact-pill" href="tel:+628990032025"><span class="contact-dot"></span>+62 899 003 2025</a>
+              </div>
+            </div>
+            <div class="qa-badge">Terima Kasih</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /deck -->
+
+  <div id="nav">
+    <button class="nav-btn" id="btn-prev" disabled>‹</button>
+    <button class="nav-btn" id="btn-next">›</button>
+  </div>
+
+  <div id="slide-counter">
+    Slide <span id="curr">1</span> / <span id="total">7</span>
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const total = slides.length;
+    let current = 0;
+
+    const progressBar = document.getElementById('progress-bar');
+    const currEl = document.getElementById('curr');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    const dotsContainer = document.getElementById('dots');
+
+    // Build dots
+    slides.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'dot' + (i === 0 ? ' active' : '');
+      d.addEventListener('click', () => goTo(i));
+      dotsContainer.appendChild(d);
+    });
+
+    function updateUI() {
+      // Progress
+      progressBar.style.width = ((current + 1) / total * 100) + '%';
+      currEl.textContent = current + 1;
+      btnPrev.disabled = current === 0;
+      btnNext.disabled = current === total - 1;
+
+      // Dots
+      document.querySelectorAll('.dot').forEach((d, i) => {
+        d.classList.toggle('active', i === current);
+      });
+    }
+
+    function goTo(index) {
+      if (index < 0 || index >= total || index === current) return;
+      slides[current].classList.remove('active');
+      slides[current].classList.add('exit');
+      setTimeout(() => slides[current > index ? current : current].classList.remove('exit'), 600);
+
+      // Remove exit from previous
+      const prev = current;
+      current = index;
+      slides[prev].classList.remove('active');
+      slides[prev].classList.add('exit');
+      setTimeout(() => slides[prev].classList.remove('exit'), 600);
+
+      slides[current].classList.add('active');
+      updateUI();
+    }
+
+    btnPrev.addEventListener('click', () => goTo(current - 1));
+    btnNext.addEventListener('click', () => goTo(current + 1));
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); goTo(current - 1); }
+    });
+
+    // Touch/swipe
+    let touchStartX = 0;
+    document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+    document.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 50) dx < 0 ? goTo(current + 1) : goTo(current - 1);
+    });
+
+    updateUI();
+  </script>
+</body>
+
+</html>
